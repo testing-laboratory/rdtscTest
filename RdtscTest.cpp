@@ -161,12 +161,98 @@ void DoExperiment(const char* name, ExperimentFunc proc, uint64_t cnt);
 
 #include <thread>
 
+// =============================================================
+
+uint64_t writeRelax(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_relaxed;
+    uint64_t value = 1;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.store(value++, order);
+    }
+    return 0;
+}
+
+uint64_t writeRelease(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_release;
+    uint64_t value = 1;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.store(value++, order);
+    }
+    return 0;
+}
+
+uint64_t writeSeq(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_seq_cst;
+    uint64_t value = 1;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.store(value++, order);
+    }
+    return 0;
+}
+
+uint64_t readRelax(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_relaxed;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.load(order);
+    }
+    return 0;
+}
+
+uint64_t readCons(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_consume;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.load(order);
+    }
+    return 0;
+}
+
+uint64_t readAq(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_acquire;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.load(order);
+    }
+    return 0;
+}
+
+uint64_t readSeq(uint64_t cnt)
+{
+    constexpr static const std::memory_order order = std::memory_order_seq_cst;
+    for (uint64_t x = cnt; x != 0; --x)
+    {
+        g_time.load(order);
+    }
+    return 0;
+}
+
+// =============================================================
+
 int main()
 {
 	std::cout << "HELLO" << std::endl;
 
 	const uint64_t cntReadTSC = 100 * 1000 * 1000ULL;
 	const uint64_t cntReadMemory = 10 * 1000 * 1000 * 1000ULL;
+
+    DoExperiment("writeRelax", writeRelax, cntReadTSC);
+    DoExperiment("writeRelease", writeRelease, cntReadTSC);
+    DoExperiment("writeSeq", writeSeq, cntReadTSC);
+
+    DoExperiment("readRelax", readRelax, cntReadTSC);
+    DoExperiment("readCons", readCons, cntReadTSC);
+    DoExperiment("readAq", readAq, cntReadTSC);
+    DoExperiment("readSeq", readSeq, cntReadTSC);
 
 #if 0
 	DoExperiment("readTSC", readTSC, cntReadTSC * 2);
@@ -200,7 +286,7 @@ int main()
 	}
 #endif
 
-#if 1
+#if 0
 	PrintDelimeter();
 	std::cout << "DO THE SAME IN PARALLEL; Calculate correct reading memory..." << std::endl;
 	PrintDelimeter();
